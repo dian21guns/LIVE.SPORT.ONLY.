@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadChannels() {
         executor.execute {
             val remotePlaylistUrl =
-                "https://raw.githubusercontent.com/pk0979/m3u-live/refs/heads/main/all.m3u"
+                "https://raw.githubusercontent.com/shareext-reborn/Shareext-LokalHiburan.m3u/refs/heads/main/Shareext%40LokalHiburan.m3u"
 
             val channels = try {
                 val remoteContent = URL(remotePlaylistUrl).readText()
