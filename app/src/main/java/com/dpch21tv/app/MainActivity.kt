@@ -1,9 +1,9 @@
 package com.dpch21tv.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 data class Channel(val name: String, val url: String)
@@ -25,7 +25,11 @@ class MainActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val selected = channels[position]
-            Toast.makeText(this, "${selected.name}\n${selected.url}", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, PlayerActivity::class.java).apply {
+                putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, selected.name)
+                putExtra(PlayerActivity.EXTRA_STREAM_URL, selected.url)
+            }
+            startActivity(intent)
         }
     }
 
