@@ -1,0 +1,7 @@
+#EXTM3U
+#EXTINF:-1 tvg-id="rcti.id" tvg-name="RCTI" group-title="Nasional",RCTI
+https://example.com/live/rcti/index.m3u8
+#EXTINF:-1 tvg-id="sctv.id" tvg-name="SCTV" group-title="Nasional",SCTV
+https://example.com/live/sctv/index.m3u8
+#EXTINF:-1 tvg-id="tvone.id" tvg-name="TV One" group-title="News",TV One
+https://example.com/live/tvone/index.m3u8
