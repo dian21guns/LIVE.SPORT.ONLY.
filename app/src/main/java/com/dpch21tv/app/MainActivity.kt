@@ -6,30 +6,48 @@ import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
-    private val channelList = listOf(
-        "RCTI",
-        "SCTV",
-        "Indosiar",
-        "MNCTV",
-        "GTV",
-        "Trans TV",
-        "Trans7",
-        "TV One",
-        "Kompas TV",
-        "Metro TV"
-    )
+data class Channel(val name: String, val url: String)
 
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val channels = loadChannelsFromPlaylist("channels.m3u")
         val listView = findViewById<ListView>(R.id.channelListView)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, channelList)
+
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_list_item_1,
+            channels.map { it.name }
+        )
         listView.adapter = adapter
 
         listView.setOnItemClickListener { _, _, position, _ ->
-            Toast.makeText(this, "Pilih channel: ${channelList[position]}", Toast.LENGTH_SHORT).show()
+            val selected = channels[position]
+            Toast.makeText(this, "${selected.name}\n${selected.url}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun loadChannelsFromPlaylist(fileName: String): List<Channel> {
+        val channels = mutableListOf<Channel>()
+        val lines = assets.open(fileName).bufferedReader().use { it.readLines() }
+
+        var pendingName: String? = null
+        for (line in lines) {
+            when {
+                line.startsWith("#EXTINF", ignoreCase = true) -> {
+                    pendingName = line.substringAfterLast(',').trim().ifBlank { "Unknown Channel" }
+                }
+
+                line.isNotBlank() && !line.startsWith("#") -> {
+                    val channelName = pendingName ?: "Unknown Channel"
+                    channels.add(Channel(name = channelName, url = line.trim()))
+                    pendingName = null
+                }
+            }
+        }
+
+        return channels
     }
 }
