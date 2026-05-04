@@ -9,7 +9,12 @@ import androidx.appcompat.app.AppCompatActivity
 import java.net.URL
 import java.util.concurrent.Executors
 
-data class Channel(val name: String, val url: String)
+data class Channel(
+    val name: String,
+    val url: String,
+    val headers: Map<String, String> = emptyMap(),
+    val clearKey: String? = null
+)
 
 class MainActivity : AppCompatActivity() {
     private lateinit var listView: ListView
@@ -54,6 +59,9 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, PlayerActivity::class.java).apply {
                         putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, selected.name)
                         putExtra(PlayerActivity.EXTRA_STREAM_URL, selected.url)
+                        putExtra(PlayerActivity.EXTRA_REFERRER, selected.headers["Referer"])
+                        putExtra(PlayerActivity.EXTRA_USER_AGENT, selected.headers["User-Agent"])
+                        putExtra(PlayerActivity.EXTRA_CLEAR_KEY, selected.clearKey)
                     }
                     startActivity(intent)
                 }
@@ -64,17 +72,46 @@ class MainActivity : AppCompatActivity() {
     private fun parseM3uLines(lines: List<String>): List<Channel> {
         val channels = mutableListOf<Channel>()
         var pendingName: String? = null
+        var pendingReferrer: String? = null
+        var pendingUserAgent: String? = null
+        var pendingClearKey: String? = null
 
-        for (line in lines) {
+        for (raw in lines) {
+            val line = raw.trim()
             when {
+                line.startsWith("#KODIPROP:inputstream.adaptive.license_key=", ignoreCase = true) -> {
+                    pendingClearKey = line.substringAfter("=", "").trim().ifBlank { null }
+                }
+
+                line.startsWith("#EXTVLCOPT:http-referrer=", ignoreCase = true) -> {
+                    pendingReferrer = line.substringAfter("=", "").trim().ifBlank { null }
+                }
+
+                line.startsWith("#EXTVLCOPT:http-user-agent=", ignoreCase = true) -> {
+                    pendingUserAgent = line.substringAfter("=", "").trim().ifBlank { null }
+                }
+
                 line.startsWith("#EXTINF", ignoreCase = true) -> {
                     pendingName = line.substringAfterLast(',').trim().ifBlank { "Unknown Channel" }
                 }
 
                 line.isNotBlank() && !line.startsWith("#") -> {
-                    val channelName = pendingName ?: "Unknown Channel"
-                    channels.add(Channel(name = channelName, url = line.trim()))
+                    val headers = buildMap {
+                        pendingReferrer?.let { put("Referer", it) }
+                        pendingUserAgent?.let { put("User-Agent", it) }
+                    }
+                    channels.add(
+                        Channel(
+                            name = pendingName ?: "Unknown Channel",
+                            url = line,
+                            headers = headers,
+                            clearKey = pendingClearKey
+                        )
+                    )
                     pendingName = null
+                    pendingReferrer = null
+                    pendingUserAgent = null
+                    pendingClearKey = null
                 }
             }
         }
